@@ -27,20 +27,20 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Database connection
-connectDB();
+// Database connection middleware
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    console.error('DB Connection Error:', error);
+    res.status(500).json({ message: 'Database connection failed' });
+  }
+});
 
 // Test route
 app.get('/', (req, res) => {
   res.json({ message: 'CodeVault Backend API 🚀' });
-});
-
-// API test route
-app.get('/api', (req, res) => {
-  res.json({ 
-    message: 'API is working!',
-    endpoints: ['/api/auth', '/api/assets', '/api/categories']
-  });
 });
 
 // Routes
@@ -52,22 +52,23 @@ app.use('/api/contests', contestRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/subscriptions', userSubscription);
 
-// Error handling middleware
+// Error handling
 app.use((err, req, res, next) => {
   console.error('Error:', err);
   res.status(500).json({ 
-    message: 'Server error', 
-    error: err.message 
+    message: err.message || 'Server error'
   });
 });
 
-// Export for Vercel (IMPORTANT!)
+// Export for Vercel
 module.exports = app;
 
-// Only for local development
+// Local development
 if (require.main === module) {
   const PORT = process.env.PORT || 5000;
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+  connectDB().then(() => {
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
   });
 }

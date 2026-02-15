@@ -3,20 +3,26 @@ const mongoose = require('mongoose');
 let isConnected = false;
 
 const connectDB = async () => {
+  // Mongoose settings for serverless
+  mongoose.set('strictQuery', false);
+  
   if (isConnected) {
     console.log('✅ Using existing MongoDB connection');
-    return;
+    return Promise.resolve();
   }
 
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI, {
+    const db = await mongoose.connect(process.env.MONGO_URI, {
       bufferCommands: false,
+      serverSelectionTimeoutMS: 5000,
     });
-    
-    isConnected = conn.connections[0].readyState === 1;
-    console.log('✅ MongoDB Connected:', conn.connection.host);
+
+    isConnected = db.connections[0].readyState === 1;
+    console.log('✅ MongoDB Connected:', db.connection.host);
+    return Promise.resolve();
   } catch (error) {
-    console.error('❌ MongoDB Error:', error.message);
+    console.error('❌ MongoDB Connection Error:', error.message);
+    isConnected = false;
     throw error;
   }
 };
