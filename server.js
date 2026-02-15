@@ -18,6 +18,7 @@ const app = express();
 app.use(cors({
   origin: [
     'https://code-vault-frontend-delta.vercel.app',
+    'https://code-vault-frontend-bdma.vercel.app',
     'http://localhost:5173'
   ],
   credentials: true
@@ -26,12 +27,20 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Database connection (called on each request in serverless)
+// Database connection
 connectDB();
 
 // Test route
 app.get('/', (req, res) => {
   res.json({ message: 'CodeVault Backend API 🚀' });
+});
+
+// API test route
+app.get('/api', (req, res) => {
+  res.json({ 
+    message: 'API is working!',
+    endpoints: ['/api/auth', '/api/assets', '/api/categories']
+  });
 });
 
 // Routes
@@ -43,20 +52,20 @@ app.use('/api/contests', contestRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/subscriptions', userSubscription);
 
-// Error handler
+// Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error('Error:', err);
   res.status(500).json({ 
-    message: 'Something went wrong!',
-    error: process.env.NODE_ENV === 'development' ? err.message : {}
+    message: 'Server error', 
+    error: err.message 
   });
 });
 
-// Export for Vercel
+// Export for Vercel (IMPORTANT!)
 module.exports = app;
 
-// Local development
-if (process.env.NODE_ENV !== 'production') {
+// Only for local development
+if (require.main === module) {
   const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
